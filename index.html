@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UGY 職前訓練分析報告 (112 vs 113)</title>
+    
+    <!-- 引入 Tailwind CSS (用於樣式) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 調整：使用 React 17 和 Recharts 1.8.5 (此組合在單一檔案執行環境中最為穩定) -->
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    
+    <!-- 引入 Recharts 1.8.5 (穩定版) -->
+    <script src="https://unpkg.com/recharts@1.8.5/umd/Recharts.min.js"></script>
+    
+    <!-- 引入 Babel (用於解析 JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: 'Microsoft JhengHei', 'Heiti TC', sans-serif; }
+        /* 自定義捲軸樣式 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // 確保變數正確載入
+        const React = window.React;
+        const ReactDOM = window.ReactDOM;
+        const Recharts = window.Recharts;
+
+        // 檢查 Recharts 是否載入成功
+        if (!Recharts) {
+            document.getElementById('root').innerHTML = '<div class="p-4 text-red-600 font-bold">錯誤：圖表庫載入失敗，請嘗試重新整理頁面。</div>';
+        }
+
+        const { useState } = React;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } = Recharts;
+
+        // --- Icons Components (SVG) ---
+        // 使用 React Fragment (<>...</>) 
+        const Icons = {
+            TrendingUp: <path d="M23 6l-9.5 9.5-5-5L1 18" />,
+            Users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+            MessageCircle: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>,
+            Lightbulb: <><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></>,
+            CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+            AlertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+            List: <><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>,
+            ThumbsUp: <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>,
+            Monitor: <><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></>,
+            Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+            BookOpen: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>
+        };
+
+        const LucideIcon = ({ name, className, size = 24 }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {Icons[name] || <circle cx="12" cy="12" r="10"/>}
+            </svg>
+        );
+
+        // --- Data ---
+        const comparisonData = [
+            { category: '師資熱忱與教學氛圍', score112: 96.5, score113: 97.5, trend: 'up', note: '表現頂尖' },
+            { category: '硬體空間與設施', score112: 93.8, score113: 95.8, trend: 'up', note: '顯著改善' },
+            { category: '教學活動與課程內容', score112: 95.1, score113: 96.2, trend: 'up', note: '全面提升' },
+            { category: '工作負荷與學習平衡', score112: 96.4, score113: 97.1, trend: 'up', note: '優於往年' },
+            { category: '溝通管道與問題解決', score112: 95.2, score113: 96.6, trend: 'up', note: '顯著改善' },
+            { category: '整體平均', score112: 95.7, score113: 96.7, trend: 'up', note: '上升 1.0' },
+        ];
+
+        const detailedTrendData = [
+            { date: '113/09/02', 課程時數: 100, 硬體設備: 94.7, 教師熱忱: 96.0, 內容條理: 97.3, 臨床幫助: 98.7 },
+            { date: '113/12/30', 課程時數: 90.0, 硬體設備: 92.5, 教師熱忱: 93.8, 內容條理: 90.0, 臨床幫助: 95.0 },
+            { date: '114/06/02', 課程時數: 93.8, 硬體設備: 95.4, 教師熱忱: 95.4, 內容條理: 93.8, 臨床幫助: 93.8 },
+            { date: '114/06/30', 課程時數: 94.0, 硬體設備: 94.0, 教師熱忱: 94.0, 內容條理: 94.0, 臨床幫助: 92.0 },
+            { date: '114/08/25', 課程時數: 94.3, 硬體設備: 94.3, 教師熱忱: 95.7, 內容條理: 95.7, 臨床幫助: 95.7 },
+            { date: '114/09/22', 課程時數: 97.1, 硬體設備: 99.0, 教師熱忱: 99.0, 內容條理: 99.0, 臨床幫助: 100 },
+        ];
+
+        const fullFeedbackList = [
+            { category: 'positive', text: '感謝老師學長姐詳細的說明，獲益良多。' },
+            { category: 'positive', text: '謝謝學姐和所有老師！生活型態醫學的課程很有趣。' },
+            { category: 'system', text: '系統教學時間可以多一點，不然看完還是不太會用。' },
+            { category: 'positive', text: '感謝老師學長姐們，收穫良多的一天。獲益良多也對奇美醫院的特色醫療有更多認識！' },
+            { category: 'suggestion', text: '課程內容充實，但希望能先進行職前講解與介紹再進行其他課程，會讓學員更快速熟悉醫院系統與流程。' },
+            { category: 'positive', text: '講師教學熱誠，謝謝老師！非常實用。' },
+            { category: 'admin', text: '學長姐跟老師們都很親切，但第一天職前訓感覺第一個course時間稍被壓縮。另外建議課程教材或LINE群組能在報到前就先寄送。' },
+            { category: 'positive', text: '老師和學長姐都很熱心教學，學到好多東西！' },
+            { category: 'suggestion', text: '課程安排不錯，有包含針扎事件。建議：可以安排實作類型的課程，例如常用到的 procedure (NG, foley, ABG)，或播放先前實作影片。' },
+            { category: 'positive', text: '收穫很多，感謝各位講者。奇美醫院是個適合訓練的好地方，出來才知道。' },
+            { category: 'admin', text: '建議：1.職前訓練前先傳LINE群組連結、講習文件、病歷系統教學影片。2.報到不需要實體照片這件事可以在信上寫清楚。' },
+            { category: 'system', text: '系統說明可以事後再看一次影片或簡報，在有需要的時候都可以在查詢很棒。' },
+            { category: 'positive', text: '謝謝奇美醫院的安排！很棒，很好。' },
+            { category: 'admin', text: '有些播放影片的課程希望能提前寄信提前觀看。' },
+            { category: 'positive', text: '謝謝老師的認真指導～' },
+            { category: 'content', text: '整體上很不錯，有所收穫！但時間有一點長～資訊量有點過於龐大，體感上會比較疲憊一些～' },
+            { category: 'positive', text: '謝謝老師！謝謝，受益良多，很讚。' },
+            { category: 'positive', text: '謝謝老師的耐心指導～收穫很多。' },
+            { category: 'content', text: '課程內容有趣豐富，但如果影片課可以讓我們自己看，或許可以讓大家精神比較好一點。' },
+            { category: 'positive', text: '課程豐富又很棒對於我們進入奇美非常有幫助，謝謝老師們。' },
+            { category: 'content', text: '整體不錯，只是8小時超久。老師很棒秘書也很棒。' },
+            { category: 'positive', text: '很棒～謝謝教學中心跟來上課的學姊，很充實很棒，讚，有所收穫。' },
+            { category: 'system', text: '職前影音課程只能在院內網域使用，但是沒有足夠的時間讓我們在院內上課。' },
+            { category: 'positive', text: '謝謝教學部安排，整天都 orientation 應該也可以，內容充實豐富，非常滿意。' },
+            { category: 'positive', text: '非常好！謝謝您們！謝謝教學中心用心準備。' },
+            { category: 'suggestion', text: '讚～但希望可以增加值班要怎麼打卡或是怎麼查詢病人等等的技巧～' },
+            { category: 'positive', text: '謝謝學姐！職前說明非常清楚。認識醫院與周邊環境，初步熟悉系統操作。' },
+            { category: 'positive', text: '學長姐教導認真。謝謝，辛苦了！課程內容詳細。' },
+            { category: 'system', text: '系統使用教學時希望能有電腦能夠同步操作，不然資訊太多太雜記不住。' }
+        ];
+
+        // --- Components ---
+        const FeedbackCategoryIcon = ({ category }) => {
+            let iconName = 'MessageCircle';
+            let colorClass = 'text-gray-500';
+            
+            switch(category) {
+                case 'positive': 
+                    iconName = 'ThumbsUp'; 
+                    colorClass = 'text-green-500'; 
+                    break;
+                case 'system': 
+                    iconName = 'Monitor'; 
+                    colorClass = 'text-blue-500'; 
+                    break;
+                case 'admin': 
+                    iconName = 'Clock'; 
+                    colorClass = 'text-orange-500'; 
+                    break;
+                case 'suggestion': 
+                    iconName = 'Lightbulb'; 
+                    colorClass = 'text-yellow-500'; 
+                    break;
+                case 'content': 
+                    iconName = 'BookOpen'; 
+                    colorClass = 'text-purple-500'; 
+                    break;
+            }
+            
+            return <LucideIcon name={iconName} className={`${colorClass} w-4 h-4 mt-1 flex-shrink-0`} size={16} />;
+        };
+
+        const StudentFeedbackAnalysis = () => {
+            return (
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                            <h4 className="font-bold text-green-800 mb-2 flex items-center">
+                                <LucideIcon name="CheckCircle" size={18} className="mr-2"/> 重點摘要：正面肯定
+                            </h4>
+                            <ul className="list-disc list-inside text-sm text-green-700 space-y-1">
+                                <li>師資教學熱忱高，學長姐親切幽默。</li>
+                                <li>課程內容充實，對臨床工作有幫助。</li>
+                                <li>生活型態醫學等特色課程受到歡迎。</li>
+                                <li>針扎事件等安全防護課程安排得宜。</li>
+                            </ul>
+                        </div>
+                        <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                            <h4 className="font-bold text-red-800 mb-2 flex items-center">
+                                <LucideIcon name="AlertCircle" size={18} className="mr-2"/> 重點摘要：待改進/痛點
+                            </h4>
+                            <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                                <li><strong>資訊過載：</strong>單日 8 小時課程過於疲憊，吸收效果下降。</li>
+                                <li><strong>系統教學：</strong>時間太短，無法當場學會，且缺乏同步操作設備。</li>
+                                <li><strong>事前資訊：</strong>LINE 群組與教材未提前寄送，照片繳交規定不清。</li>
+                                <li><strong>影片限制：</strong>部分影音限院內網域，學員無時間在院內觀看。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <LucideIcon name="List" className="mr-2 text-blue-600" />
+                            職前訓練課程滿意度之學員回饋 (完整列表)
+                        </h3>
+                        <div className="bg-gray-50 rounded-xl p-4 max-h-[500px] overflow-y-auto shadow-inner border border-gray-200">
+                            <div className="grid gap-3">
+                                {fullFeedbackList.map((item, index) => (
+                                <div key={index} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-start gap-3 hover:shadow-md transition-shadow">
+                                    <FeedbackCategoryIcon category={item.category} />
+                                    <span className="text-sm text-gray-700 leading-relaxed">{item.text}</span>
+                                </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500 justify-end">
+                            <span className="flex items-center"><LucideIcon name="ThumbsUp" className="w-3 h-3 mr-1 text-green-500" size={12}/> 正面回饋</span>
+                            <span className="flex items-center"><LucideIcon name="Monitor" className="w-3 h-3 mr-1 text-blue-500" size={12}/> 系統與設備</span>
+                            <span className="flex items-center"><LucideIcon name="Clock" className="w-3 h-3 mr-1 text-orange-500" size={12}/> 行政流程</span>
+                            <span className="flex items-center"><LucideIcon name="BookOpen" className="w-3 h-3 mr-1 text-purple-500" size={12}/> 課程內容</span>
+                            <span className="flex items-center"><LucideIcon name="Lightbulb" className="w-3 h-3 mr-1 text-yellow-500" size={12}/> 具體建議</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ComparisonTable = () => (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm mt-6">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">面向</th>
+                            <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">112 學年度 (對照)</th>
+                            <th className="px-6 py-3 text-left font-medium text-blue-600 uppercase tracking-wider">113 學年度 (本期)</th>
+                            <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">趨勢</th>
+                            <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">主要差異與成因</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td className="px-6 py-4 font-medium text-gray-900">師資與氛圍</td>
+                            <td className="px-6 py-4 text-gray-600">高度滿意 (96.5)</td>
+                            <td className="px-6 py-4 text-blue-600 font-bold">表現頂尖 (97.5)</td>
+                            <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">穩定優異</span></td>
+                            <td className="px-6 py-4 text-gray-600">主治/住院醫師教學熱忱提升，文化傳承佳。</td>
+                        </tr>
+                        <tr>
+                            <td className="px-6 py-4 font-medium text-gray-900">硬體與空間</td>
+                            <td className="px-6 py-4 text-gray-600">相對弱項 (93.5-94.2)</td>
+                            <td className="px-6 py-4 text-blue-600 font-bold">大幅提升 (95.7-95.9)</td>
+                            <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">顯著改善</span></td>
+                            <td className="px-6 py-4 text-gray-600">軟裝優化（寢具、休憩補給）策略奏效。</td>
+                        </tr>
+                        <tr>
+                            <td className="px-6 py-4 font-medium text-gray-900">溝通與問題解決</td>
+                            <td className="px-6 py-4 text-gray-600">有待加強 (95.2)</td>
+                            <td className="px-6 py-4 text-blue-600 font-bold">各項指標高 (96.6+)</td>
+                            <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">顯著改善</span></td>
+                            <td className="px-6 py-4 text-gray-600">落實座談會意見的「閉環管理」(Close the loop)。</td>
+                        </tr>
+                        <tr>
+                            <td className="px-6 py-4 font-medium text-gray-900">課程與教學</td>
+                            <td className="px-6 py-4 text-gray-600">表現持平 (94.7-95.6)</td>
+                            <td className="px-6 py-4 text-blue-600 font-bold">全面突破 (96.0+)</td>
+                            <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">改善</span></td>
+                            <td className="px-6 py-4 text-gray-600">教學內容結構化，不再僅是經驗分享。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('overview');
+
+            return (
+                <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm sticky top-0 z-10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-blue-600 p-2 rounded-lg">
+                                    <LucideIcon name="TrendingUp" className="text-white" />
+                                </div>
+                                <h1 className="text-xl font-bold text-gray-900">UGY 職前訓練分析報告</h1>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">112 vs 113 學年度</span>
+                            </div>
+                            <nav className="hidden md:flex space-x-4">
+                                <button 
+                                    onClick={() => setActiveTab('overview')}
+                                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    總體比較
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('details')}
+                                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'details' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    詳細數據與回饋
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('action')}
+                                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'action' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-900'}`}
+                                >
+                                    改善建議表
+                                </button>
+                            </nav>
+                        </div>
+                    </header>
+
+                    {/* Mobile Navigation */}
+                    <div className="md:hidden bg-white border-b border-gray-200 px-4 py-2 flex space-x-2 overflow-x-auto">
+                         <button 
+                            onClick={() => setActiveTab('overview')}
+                            className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        >
+                            總體比較
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('details')}
+                            className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === 'details' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        >
+                            詳細數據
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('action')}
+                            className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === 'action' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        >
+                            改善建議
+                        </button>
+                    </div>
+
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        
+                        {/* Tab 1: Overview - Comparison */}
+                        {activeTab === 'overview' && (
+                        <div className="space-y-6">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                    <LucideIcon name="Users" className="mr-2 text-blue-500"/> 年度對比摘要 (112 vs 113)
+                                </h2>
+                                <div className="h-80 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        <XAxis dataKey="category" tick={{fontSize: 12}} interval={0} angle={-10} textAnchor="end" height={60}/>
+                                        <YAxis domain={[90, 100]} />
+                                        <Tooltip 
+                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                            cursor={{ fill: '#f3f4f6' }}
+                                        />
+                                        <Legend />
+                                        <Bar dataKey="score112" name="112 學年度" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="score113" name="113 學年度" fill="#2563eb" radius={[4, 4, 0, 0]} label={{ position: 'top', fill: '#2563eb', fontSize: 12 }} />
+                                    </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <p className="text-sm text-gray-500 mt-2 text-center">* 數據來源：滿意度比較重點分析表。整體平均滿意度提升 1.0 分。</p>
+                            </div>
+
+                            <ComparisonTable />
+                        </div>
+                        )}
+
+                        {/* Tab 2: Details - Trend & Feedback */}
+                        {activeTab === 'details' && (
+                        <div className="space-y-6">
+                            
+                            {/* Trend Chart */}
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                    <LucideIcon name="TrendingUp" className="mr-2 text-blue-500"/> 113-114 年度內滿意度趨勢追蹤
+                                </h2>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    分析顯示，雖然整體滿意度高，但在<strong>113/12/30</strong>時出現明顯低谷（課程時數與條理），隨後於隔年6月回升。這可能與當時特定課程安排或年末工作負擔有關。
+                                </p>
+                                <div className="h-80 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={detailedTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                        <XAxis dataKey="date" />
+                                        <YAxis domain={[88, 102]} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="課程時數" stroke="#ef4444" strokeWidth={2} dot={{r: 4}} />
+                                        <Line type="monotone" dataKey="硬體設備" stroke="#f59e0b" strokeWidth={2} />
+                                        <Line type="monotone" dataKey="臨床幫助" stroke="#10b981" strokeWidth={2} activeDot={{ r: 8 }} />
+                                    </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Qualitative Feedback */}
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                    <LucideIcon name="MessageCircle" className="mr-2 text-blue-500"/> 學員回饋深度分析
+                                </h2>
+                                <StudentFeedbackAnalysis />
+                            </div>
+                        </div>
+                        )}
+
+                        {/* Tab 3: Action Plan */}
+                        {activeTab === 'action' && (
+                        <div className="space-y-6">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                    <LucideIcon name="Lightbulb" className="mr-2 text-yellow-500"/> 綜合改善建議表 (PDCA)
+                                </h2>
+                                <div className="grid gap-6">
+                                    
+                                    {/* Plan 1 */}
+                                    <div className="border-l-4 border-blue-500 pl-4 py-1">
+                                        <h3 className="font-bold text-gray-900 text-lg">1. 資訊前置化 (Pre-arrival)</h3>
+                                        <p className="text-gray-600 text-sm mt-1 mb-2"><strong>問題：</strong> 學員反映報到當日資訊量爆炸，LINE 群組太晚加，照片規格不清。</p>
+                                        <div className="bg-blue-50 p-3 rounded text-sm text-blue-800">
+                                            <p className="font-semibold">具體行動：</p>
+                                            <ul className="list-disc list-inside mt-1">
+                                                <li>報到前 1 週寄發 LINE 群組連結。</li>
+                                                <li>Email 明確標註「照片需電子檔或實體照」。</li>
+                                                <li>提前釋出非機密之職前影片連結（或放置於雲端），供學員預習。</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Plan 2 */}
+                                    <div className="border-l-4 border-red-500 pl-4 py-1">
+                                        <h3 className="font-bold text-gray-900 text-lg">2. 系統教學優化 (System Training)</h3>
+                                        <p className="text-gray-600 text-sm mt-1 mb-2"><strong>問題：</strong> 聽完還是不會用，缺乏操作感，影片只能在院內看。</p>
+                                        <div className="bg-red-50 p-3 rounded text-sm text-red-800">
+                                            <p className="font-semibold">具體行動：</p>
+                                            <ul className="list-disc list-inside mt-1">
+                                                <li>安排「同步操作」時段：學員使用電腦/平板跟隨講師步驟。</li>
+                                                <li>製作「系統操作懶人包」小卡或 PDF，存於公用手機/電腦桌面供隨時查閱。</li>
+                                                <li>研議是否可透過 VPN 開放院外瀏覽教學影片權限。</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Plan 3 */}
+                                    <div className="border-l-4 border-green-500 pl-4 py-1">
+                                        <h3 className="font-bold text-gray-900 text-lg">3. 課程內容調整 (Course Content)</h3>
+                                        <p className="text-gray-600 text-sm mt-1 mb-2"><strong>問題：</strong> 8小時馬拉松式課程太累，希望能增加實作。</p>
+                                        <div className="bg-green-50 p-3 rounded text-sm text-green-800">
+                                            <p className="font-semibold">具體行動：</p>
+                                            <ul className="list-disc list-inside mt-1">
+                                                <li>引入「實作工作坊」：增加 NG tube, Foley, ABG 等常用 Procedure 實練。</li>
+                                                <li>課程分流：將部分行政宣導改為線上測驗，實體時間留給臨床技能與系統操作。</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        )}
+
+                    </main>
+                </div>
+            );
+        };
+
+        // Render for React 17
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
