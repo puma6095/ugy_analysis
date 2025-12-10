@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UGY 職前訓練分析報告 (112 vs 113)</title>
+    <title>UGY 職前訓練分析報告 (113 vs 114)</title>
     
     <!-- 引入 Tailwind CSS (用於樣式) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -80,6 +80,7 @@
         );
 
         // --- Data ---
+        // 備註：此處變數名稱維持 score112/113 以確保程式碼穩定性，但在顯示層已修改為 113/114
         const comparisonData = [
             { category: '師資熱忱與教學氛圍', score112: 96.5, score113: 97.5, trend: 'up', note: '表現頂尖' },
             { category: '硬體空間與設施', score112: 93.8, score113: 95.8, trend: 'up', note: '顯著改善' },
@@ -222,8 +223,8 @@
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">面向</th>
-                            <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">112 學年度 (對照)</th>
-                            <th className="px-6 py-3 text-left font-medium text-blue-600 uppercase tracking-wider">113 學年度 (本期)</th>
+                            <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">113 學年度 (對照)</th>
+                            <th className="px-6 py-3 text-left font-medium text-blue-600 uppercase tracking-wider">114 學年度 (本期)</th>
                             <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">趨勢</th>
                             <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">主要差異與成因</th>
                         </tr>
@@ -275,7 +276,7 @@
                                     <LucideIcon name="TrendingUp" className="text-white" />
                                 </div>
                                 <h1 className="text-xl font-bold text-gray-900">UGY 職前訓練分析報告</h1>
-                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">112 vs 113 學年度</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">113 vs 114 學年度</span>
                             </div>
                             <nav className="hidden md:flex space-x-4">
                                 <button 
@@ -329,7 +330,7 @@
                         <div className="space-y-6">
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                                 <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                                    <LucideIcon name="Users" className="mr-2 text-blue-500"/> 年度對比摘要 (112 vs 113)
+                                    <LucideIcon name="Users" className="mr-2 text-blue-500"/> 年度對比摘要 (113 vs 114)
                                 </h2>
                                 <div className="h-80 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -342,8 +343,8 @@
                                             cursor={{ fill: '#f3f4f6' }}
                                         />
                                         <Legend />
-                                        <Bar dataKey="score112" name="112 學年度" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="score113" name="113 學年度" fill="#2563eb" radius={[4, 4, 0, 0]} label={{ position: 'top', fill: '#2563eb', fontSize: 12 }} />
+                                        <Bar dataKey="score112" name="113 學年度" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="score113" name="114 學年度" fill="#2563eb" radius={[4, 4, 0, 0]} label={{ position: 'top', fill: '#2563eb', fontSize: 12 }} />
                                     </BarChart>
                                     </ResponsiveContainer>
                                 </div>
